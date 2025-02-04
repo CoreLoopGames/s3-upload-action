@@ -39,7 +39,7 @@ jobs:
 
       - name: Upload file to S3
         id: s3upload
-        uses: yourusername/s3-upload-action@v1
+        uses: CoreLoopGames/s3-upload-action@master
         with:
           bucket: ${{ secrets.AWS_S3_BUCKET }}
           key: 'client-apk/WorldEternal.apk'
