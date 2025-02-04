@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Upload to S3 using AWS CLI
-        uses: CoreLoopGames/upload-to-s3-cli-action@cli
+        uses: CoreLoopGames/s3-upload-action@cli
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
