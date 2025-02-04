@@ -1,0 +1,27 @@
+name: 'S3 Upload Action'
+description: 'Uploads a file to AWS S3 using the AWS SDK s3.upload method.'
+author: 'Your Name'
+inputs:
+  bucket:
+    description: 'The S3 bucket name.'
+    required: true
+  key:
+    description: 'The destination key (file name) in S3.'
+    required: true
+  file:
+    description: 'The local file path to upload.'
+    required: true
+  content-type:
+    description: 'The MIME content type for the file.'
+    required: false
+    default: 'application/octet-stream'
+  region:
+    description: 'AWS region (defaults to us-east-1).'
+    required: false
+    default: 'us-east-1'
+outputs:
+  url:
+    description: 'The URL of the uploaded file.'
+runs:
+  using: 'node12'
+  main: 'index.js'
