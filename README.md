@@ -1,54 +1,55 @@
-# S3 Upload Action
+# Upload to S3 using AWS CLI GitHub Action
 
-A custom GitHub Action that uploads a file to AWS S3 using the AWS SDK's `upload()` method. This action reads a local file, uploads it to the specified S3 bucket with the given key, and returns the URL of the uploaded file as an output.
+This GitHub Action uploads files or directories to an AWS S3 bucket using the AWS CLI. It supports uploading individual files or entire directories, with an option to zip directories before uploading.
+
+---
 
 ## Features
 
-- Uses AWS SDK’s managed upload method to handle large files via multipart upload.
-- Configurable inputs for bucket, key, file path, content type, and region.
-- Outputs the S3 URL of the uploaded file.
-- Designed to be used as a standalone GitHub Action.
+- **Upload Files or Directories**: Upload a single file or an entire directory to an S3 bucket.
+- **Optional Zipping**: Automatically zip directories before uploading.
+- **Custom S3 Key**: Specify the S3 key (path) where the file/directory should be uploaded.
+- **AWS Credentials**: Securely pass AWS credentials using GitHub Secrets.
 
-## Inputs
-
-| Input         | Description                                                        | Required | Default                      |
-|---------------|--------------------------------------------------------------------|----------|------------------------------|
-| `bucket`      | The name of the S3 bucket.                                         | Yes      | —                            |
-| `key`         | The destination key (file name/path) in S3.                        | Yes      | —                            |
-| `file`        | The local file path to upload.                                     | Yes      | —                            |
-| `content-type`| The MIME content type of the file (e.g., `application/octet-stream`). | No       | `application/octet-stream`   |
-| `region`      | The AWS region to use.                                             | No       | `us-east-1`                  |
-
-## Outputs
-
-| Output | Description                                        |
-|--------|----------------------------------------------------|
-| `url`  | The URL of the uploaded file in S3.                |
+---
 
 ## Usage
 
-Below is an example workflow that uses this action:
+### Inputs
+
+| Input Name               | Description                                                                 | Required | Default Value     |
+|--------------------------|-----------------------------------------------------------------------------|----------|-------------------|
+| `aws-access-key-id`      | AWS Access Key ID for authentication.                                       | Yes      | -                 |
+| `aws-secret-access-key`  | AWS Secret Access Key for authentication.                                   | Yes      | -                 |
+| `aws-region`             | AWS Region where the S3 bucket is located.                                  | Yes      | `us-east-1`       |
+| `s3-bucket`              | Name of the S3 bucket to upload to.                                         | Yes      | -                 |
+| `local-path`             | Local path to the file or directory to upload.                              | Yes      | -                 |
+| `s3-key`                 | S3 key (path) where the file/directory should be uploaded.                  | Yes      | -                 |
+| `zip-before-upload`      | Whether to zip the directory before uploading. Set to `true` or `false`.    | No       | `false`           |
+
+---
+
+## Example Workflow
+
+### Upload a File to S3
 
 ```yaml
+name: Upload File to S3
+on: [push]
+
 jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Upload file to S3
-        id: s3upload
-        uses: CoreLoopGames/s3-upload-action@master
+      - name: Upload to S3 using AWS CLI
+        uses: CoreLoopGames/s3-upload-action@cli
         with:
-          bucket: ${{ secrets.AWS_S3_BUCKET }}
-          key: 'client-apk/WorldEternal.apk'
-          file: 'lm_client/WorldEternal/WorldEternal.apk'
-          content-type: 'application/vnd.android.package-archive'
-          region: 'us-east-1'
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: Display uploaded URL
-        run: echo "File uploaded to ${{ steps.s3upload.outputs.url }}"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+          s3-bucket: 'your-s3-bucket-name'
+          local-path: 'path/to/your/file.txt'
+          s3-key: 'path/in/s3/file.txt'
