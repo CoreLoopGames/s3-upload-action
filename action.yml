@@ -44,8 +44,8 @@ runs:
     - name: Upload to S3
       shell: bash
       run: |
-        if [[ "${{ inputs.zip-before-upload }}" == "true" && -d "${{ inputs.local-path }}" ]]; then
-          echo "Zipping directory before upload..."
+        if [[ "${{ inputs.zip-before-upload }}" == "true" ]]; then
+          echo "Zipping input file or directory before upload..."
           zip -r upload.zip "${{ inputs.local-path }}"
           aws s3 cp upload.zip "s3://${{ inputs.s3-bucket }}/${{ inputs.s3-key }}"
           rm -f upload.zip
