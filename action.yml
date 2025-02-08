@@ -1,6 +1,5 @@
 name: 'Upload to S3 using AWS CLI'
 description: 'Upload files or directories to an S3 bucket using the AWS CLI.'
-author: 'Your Name'
 
 inputs:
   aws-access-key-id:
