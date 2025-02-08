@@ -1,0 +1,47 @@
+name: 'Download from S3 using AWS CLI'
+description: 'Download files from an S3 bucket using the AWS CLI'
+
+inputs:
+  aws-access-key-id:
+    description: 'AWS Access Key ID'
+    required: true
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key'
+    required: true
+  aws-region:
+    description: 'AWS Region'
+    required: true
+    default: 'us-east-1'
+  s3-bucket:
+    description: 'S3 Bucket Name'
+    required: true
+  s3-key:
+    description: 'S3 key (path) of the file to download'
+    required: true
+  local-path:
+    description: 'Local path where to save the downloaded file'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS CLI
+      shell: bash
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
+      run: |
+        aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+        aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+        aws configure set region $AWS_DEFAULT_REGION
+
+    - name: Download from S3
+      shell: bash
+      run: |
+        echo "Downloading file from S3..."
+        aws s3 cp "s3://${{ inputs.s3-bucket }}/${{ inputs.s3-key }}" "${{ inputs.local-path }}"
+        
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
