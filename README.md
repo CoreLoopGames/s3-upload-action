@@ -6,9 +6,9 @@ This GitHub Action uploads files or directories to an AWS S3 bucket using the AW
 
 ## Features
 
-- **Upload Files or Directories**: Upload a single file or an entire directory to an S3 bucket.
+- **Upload Files or Directories**: Upload files or entire directories to an S3 bucket.
 - **Optional Zipping**: Automatically zip directories before uploading.
-- **Custom S3 Key**: Specify the S3 key (path) where the file/directory should be uploaded.
+- **Custom S3 Key**: Specify the S3 keys (paths) where the files/directories should be uploaded.
 - **AWS Credentials**: Securely pass AWS credentials using GitHub Secrets.
 
 ---
@@ -17,15 +17,15 @@ This GitHub Action uploads files or directories to an AWS S3 bucket using the AW
 
 ### Inputs
 
-| Input Name               | Description                                                                 | Required | Default Value     |
-|--------------------------|-----------------------------------------------------------------------------|----------|-------------------|
-| `aws-access-key-id`      | AWS Access Key ID for authentication.                                       | Yes      | -                 |
-| `aws-secret-access-key`  | AWS Secret Access Key for authentication.                                   | Yes      | -                 |
-| `aws-region`             | AWS Region where the S3 bucket is located.                                  | Yes      | `us-east-1`       |
-| `s3-bucket`              | Name of the S3 bucket to upload to.                                         | Yes      | -                 |
-| `local-path`             | Local path to the file or directory to upload.                              | Yes      | -                 |
-| `s3-key`                 | S3 key (path) where the file/directory should be uploaded.                  | Yes      | -                 |
-| `zip-before-upload`      | Whether to zip the directory before uploading. Set to `true` or `false`.    | No       | `false`           |
+| Input Name               | Description                                                              | Required | Default Value     |
+|--------------------------|--------------------------------------------------------------------------|----------|-------------------|
+| `aws-access-key-id`      | AWS Access Key ID for authentication.                                    | Yes      | -                 |
+| `aws-secret-access-key`  | AWS Secret Access Key for authentication.                                | Yes      | -                 |
+| `aws-region`             | AWS Region where the S3 bucket is located.                               | Yes      | `us-east-1`       |
+| `s3-bucket`              | Name of the S3 bucket to upload to.                                      | Yes      | -                 |
+| `local-path`             | Comma-separated list of local paths to upload                            | Yes      | -                 |
+| `s3-key`                 | Comma-separated list of S3 keys (paths) to upload to                     | Yes      | -                 |
+| `zip-before-upload`      | Whether to zip the directory before uploading. Set to `true` or `false`. | No       | `false`           |
 
 ---
 

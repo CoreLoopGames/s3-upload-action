@@ -16,10 +16,10 @@ inputs:
     description: 'S3 Bucket Name'
     required: true
   local-path:
-    description: 'Local path to the file or directory to upload'
+    description: 'Comma-separated list of local paths to upload'
     required: true
   s3-key:
-    description: 'S3 key (path) where the file/directory should be uploaded'
+    description: 'Comma-separated list of S3 keys (paths) to upload to'
     required: true
   zip-before-upload:
     description: 'Whether to zip the directory before uploading. Set to `true` or `false`.'
@@ -40,22 +40,30 @@ runs:
         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
         aws configure set region $AWS_DEFAULT_REGION
         
-    - name: Upload to S3
+    - name: Upload multiple files/directories to S3
       shell: bash
       run: |
-        if [[ "${{ inputs.zip-before-upload }}" == "true" ]]; then
-          echo "Zipping input file or directory before upload..."
-          zip -r upload.zip "${{ inputs.local-path }}"
-          aws s3 cp upload.zip "s3://${{ inputs.s3-bucket }}/${{ inputs.s3-key }}"
-          rm -f upload.zip
-        else
-          echo "Uploading file or directory..."
-          # Check if the local path is a directory
-          if [[ -d "${{ inputs.local-path }}" ]]; then
-            # For directories, use --recursive and ensure S3 key ends with /
-            aws s3 cp "${{ inputs.local-path }}" "s3://${{ inputs.s3-bucket }}/${{ inputs.s3-key }}/" --recursive
-          else
-            # For single files, upload directly
-            aws s3 cp "${{ inputs.local-path }}" "s3://${{ inputs.s3-bucket }}/${{ inputs.s3-key }}"
-          fi
+        IFS=',' read -ra LOCAL_PATHS <<< "${{ inputs.local-path }}"
+        IFS=',' read -ra S3_KEYS <<< "${{ inputs.s3-key }}"
+
+        if [ "${#LOCAL_PATHS[@]}" -ne "${#S3_KEYS[@]}" ]; then
+          echo "Error: The number of local paths and S3 keys must be the same."
+          exit 1
         fi
+
+        for i in "${!LOCAL_PATHS[@]}"; do
+          LOCAL_PATH="${LOCAL_PATHS[$i]}"
+          S3_KEY="${S3_KEYS[$i]}"
+
+          echo "Processing: Local='${LOCAL_PATH}' -> S3 Key='${S3_KEY}'"
+
+          if [[ "${{ inputs.zip-before-upload }}" == "true" ]]; then
+            ZIP_NAME="upload_${i}.zip"
+            echo "Zipping '${LOCAL_PATH}' into '${ZIP_NAME}'"
+            zip -r "${ZIP_NAME}" "${LOCAL_PATH}"
+            aws s3 cp "${ZIP_NAME}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
+            rm -f "${ZIP_NAME}"
+          else
+            aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}" --recursive
+          fi
+        done
