@@ -64,6 +64,11 @@ runs:
             aws s3 cp "${ZIP_NAME}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
             rm -f "${ZIP_NAME}"
           else
-            aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}" --recursive
+            if [[ -d "${LOCAL_PATH}" ]]; then
+              # For directories, use --recursive and ensure S3 key ends with /
+              aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}/" --recursive
+            else
+              aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
+            fi
           fi
         done
