@@ -28,7 +28,7 @@ inputs:
   skip-unchanged:
     description: 'Skip upload purely by key name: if the destination key exists, do not upload (files/zips/dirs).'
     required: false
-    default: 'true'
+    default: 'false'
 
 runs:
   using: 'composite'
