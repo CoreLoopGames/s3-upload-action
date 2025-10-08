@@ -25,6 +25,10 @@ inputs:
     description: 'Whether to zip the directory before uploading. Set to `true` or `false`.'
     required: false
     default: 'false'
+  skip-unchanged:
+    description: 'Skip upload purely by key name: if the destination key exists, do not upload (files/zips/dirs).'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
@@ -36,13 +40,16 @@ runs:
         AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
         AWS_DEFAULT_REGION: ${{ inputs.aws-region }}
       run: |
+        set -euo pipefail
         aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
         aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
         aws configure set region $AWS_DEFAULT_REGION
-        
+
     - name: Upload multiple files/directories to S3
       shell: bash
       run: |
+        set -euo pipefail
+
         IFS=',' read -ra LOCAL_PATHS <<< "${{ inputs.local-path }}"
         IFS=',' read -ra S3_KEYS <<< "${{ inputs.s3-key }}"
 
@@ -60,15 +67,45 @@ runs:
           if [[ "${{ inputs.zip-before-upload }}" == "true" ]]; then
             ZIP_NAME="upload_${i}.zip"
             echo "Zipping '${LOCAL_PATH}' into '${ZIP_NAME}'"
-            zip -r "${ZIP_NAME}" "${LOCAL_PATH}"
-            aws s3 cp "${ZIP_NAME}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
-            rm -f "${ZIP_NAME}"
+            zip -r "$ZIP_NAME" "$LOCAL_PATH"
+
+            if [[ "${{ inputs.skip-unchanged }}" == "true" ]] && aws s3api head-object --bucket "${{ inputs.s3-bucket }}" --key "${S3_KEY}" >/dev/null 2>&1; then
+              echo "Object '${S3_KEY}' already exists. Skipping upload (name-only check)."
+              rm -f "$ZIP_NAME"
+              continue
+            fi
+
+            aws s3 cp "$ZIP_NAME" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
+            rm -f "$ZIP_NAME"
           else
-            if [[ -d "${LOCAL_PATH}" ]]; then
-              # For directories, use --recursive and ensure S3 key ends with /
-              aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}/" --recursive
+            if [[ -d "$LOCAL_PATH" ]]; then
+              if [[ "${{ inputs.skip-unchanged }}" == "true" ]]; then
+                echo "Name-only skip for directory '$LOCAL_PATH' → 's3://${{ inputs.s3-bucket }}/${S3_KEY}/'"
+
+                base_key="${S3_KEY%/}"
+
+                # Walk files safely (handles spaces/newlines) and only upload keys that do not exist.
+                while IFS= read -r -d '' f; do
+                  rel="${f#"$LOCAL_PATH"/}"
+                  key="${base_key}/${rel}"
+
+                  if aws s3api head-object --bucket "${{ inputs.s3-bucket }}" --key "$key" >/dev/null 2>&1; then
+                    echo "SKIP (exists): s3://${{ inputs.s3-bucket }}/$key"
+                  else
+                    echo "UPLOAD: $f → s3://${{ inputs.s3-bucket }}/$key"
+                    aws s3 cp "$f" "s3://${{ inputs.s3-bucket }}/$key"
+                  fi
+                done < <(find "$LOCAL_PATH" -type f -print0)
+              else
+                # Default behavior (no skipping): copy directory recursively.
+                aws s3 cp "$LOCAL_PATH" "s3://${{ inputs.s3-bucket }}/${S3_KEY%/}/" --recursive
+              fi
             else
-              aws s3 cp "${LOCAL_PATH}" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
+              if [[ "${{ inputs.skip-unchanged }}" == "true" ]] && aws s3api head-object --bucket "${{ inputs.s3-bucket }}" --key "${S3_KEY}" >/dev/null 2>&1; then
+                echo "Object '${S3_KEY}' already exists. Skipping upload (name-only check)."
+                continue
+              fi
+              aws s3 cp "$LOCAL_PATH" "s3://${{ inputs.s3-bucket }}/${S3_KEY}"
             fi
           fi
         done
